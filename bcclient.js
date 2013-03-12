@@ -23,7 +23,8 @@
     var request = require('request'),
         strAllow = require('str-allow');
     
-    var filter = strAllow('1234567890');
+    var filter = strAllow('1234567890'),
+        exts = ['png', 'svg'];
     
     return function(host, port) {
         var that = this;
@@ -43,8 +44,11 @@
         that.host = host;
         that.port = port;
         
-        that.svg = function(bc, cb) {
-            request('http://' + that.host + ':' + that.port + '/' + filter(bc) + '.svg', function(err, res, body) {
+        that._req = function(ext, bc, cb) {
+            request({
+                url: 'http://' + that.host + ':' + that.port + '/' + filter(bc) + '.' + ext,
+                encoding: null
+            }, function(err, res, body) {
                 if(err) {
                     cb(err);
                 } else if(res.statusCode !== 200) {
@@ -54,6 +58,12 @@
                 }
             });
         };
+        
+        exts.forEach(function(v, i, a) {
+            that[v] = function(bc, cb) {
+                that._req(v, bc, cb);
+            };
+        });
         
         return that;
     };
